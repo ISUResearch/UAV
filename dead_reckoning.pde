@@ -11,10 +11,10 @@ int ptr;
 
 int count;
 
-float pitch, yaw, roll, press, offset;
+float pitch, yaw, roll, press, offset, offsetPress;
 float px, py, pz, vx, vy, vz, ax, ay, az;
 
-long timeAtt, timePres;
+long timeAtt, timePress;
 
 void setup() {
   size(1200, 800, P3D);
@@ -22,7 +22,7 @@ void setup() {
   state = 0;
   
   px = py = pz = vx = vy = vz = press = 0;
-  timeAtt = timePres = 0;
+  timeAtt = timePress = 0;
   count = 0;
   
   port = new Serial(this, Serial.list()[0], 57600);
@@ -46,14 +46,14 @@ void draw() {
   line(width/2, height, 0, width/2, height - 10000, 0);
   line(width/2, height, 0, width/2, height, 10000);
   
-  translate(600 + py*100, 750 + pz*100, -px*100);
+  translate(600 + py*100, 750 - pz*100, -px*100);
   rotateY(-yaw);
   rotateZ(-roll);
   rotateX(pitch);
   fill(96, 96, 96);
   stroke(64, 64, 64);
   box(200, 50, 200);
-  line(py, pz, -px, py + ay * 200, pz - az*200, ax*200 - px);
+  //line(py, pz, -px, py + ay * 200, -pz - az*200, -ax*200 - px);
 }
 
 
@@ -144,17 +144,30 @@ void Packet() {
     ay = sin(yaw)*sin(pitch)*cos(roll) - cos(yaw)*sin(roll);
     az = cos(pitch)*cos(roll);
     
-    println(pitch*180/PI + "   " + yaw*180/PI + "    " + roll*180/PI + "    " + ax + "    " + ay + "    " + az);
+    //println(pitch*180/PI + "   " + yaw*180/PI + "    " + roll*180/PI + "    " + ax + "    " + ay + "    " + az);
     
     px += vx*dt + 0.5f*ax*dt*dt;
     py += vy*dt + 0.5f*ay*dt*dt;
-    pz += 0;//vz*dt + 0.5f*az*dt*dt;
     
     vx += ax*dt;
     vy += ay*dt;
-    vz += az*dt;
   }
   else if(msgID == 29) {
+    float dt = 0;
+    short temp;
+     if(timePress != 0)
+       dt = (millis() - timePress)*0.001f;
+     
+     timePress = millis();
+       
     	press = Float.intBitsToFloat((payload[4] & 0xFF) | ((payload[5] & 0xFF) << 8) | ((payload[6] & 0xFF) << 16) | ((payload[7] & 0xFF) << 24));
+     temp = (short)((short)(payload[12] & 0xFF) | (short)((payload[13] & 0xFF) << 8));
+     //println(temp);
+    
+     if(dt == 0)
+       offsetPress = press;
+     
+     pz = 0.5f*(-1.38065*temp*log(press / offsetPress))/(0.02895*9.8) + 0.5f*pz;
+     println(pz);
   	}
 }
