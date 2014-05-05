@@ -16,6 +16,9 @@ float px, py, pz, vx, vy, vz, ax, ay, az;
 
 long timeAtt, timePress;
 
+int dragStartX, dragStartY;
+float xRot, yRot;
+
 void setup() {
   size(1200, 800, P3D);
   
@@ -36,6 +39,8 @@ void draw() {
   camera(width*1.5, height/2, -width, width/2, height/2, 0, 0, 1, 0);
   
   translate(600, 800, 0);
+  rotateY(xRot);
+  rotateX(yRot);
   fill(96, 255, 96);
   box(1.5*width, 1, 1.5*width);
   
@@ -170,4 +175,18 @@ void Packet() {
      pz = 0.5f*(-1.38065*temp*log(press / offsetPress))/(0.02895*9.8) + 0.5f*pz;
      println(pz);
   	}
+}
+void mousePressed() {
+  dragStartX = mouseX;
+  dragStartY = mouseY;
+}
+
+void mouseDragged() {
+  int dragAmountX = mouseX - dragStartX;
+  int dragAmountY = mouseY - dragStartY;
+  float anglePerPixel = PI/1024;
+  xRot = xRot + dragAmountX * anglePerPixel;
+  yRot = yRot - dragAmountY * anglePerPixel;
+  dragStartX = mouseX;
+  dragStartY = mouseY;
 }
